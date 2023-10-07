@@ -54,10 +54,7 @@ import sys.io.File;
 #end
 
 #if VIDEOS_ALLOWED 
-#if (hxCodec >= "3.0.0") import hxcodec.flixel.FlxVideo as VideoHandler;
-#elseif (hxCodec >= "2.6.1") import hxcodec.VideoHandler as VideoHandler;
-#elseif (hxCodec == "2.6.0") import VideoHandler;
-#else import vlc.MP4Handler as VideoHandler; #end
+import backend.VideoManager;
 #end
 
 import objects.Note.EventNote;
@@ -263,6 +260,8 @@ class PlayState extends MusicBeatState
 	// Callbacks for stages
 	public var startCallback:Void->Void = null;
 	public var endCallback:Void->Void = null;
+
+	#if VIDEOS_ALLOWED public var videoSprites:Array<backend.VideoSpriteManager> = []; #end 
 
 	override public function create()
 	{
@@ -829,9 +828,9 @@ class PlayState extends MusicBeatState
 		char.y += char.positionArray[1];
 	}
 
-	public function startVideo(name:String)
+	#if VIDEOS_ALLOWED
+	public function startVideo(name:String):VideoManager
 	{
-		#if VIDEOS_ALLOWED
 		inCutscene = true;
 
 		var filepath:String = Paths.video(name);
@@ -843,34 +842,25 @@ class PlayState extends MusicBeatState
 		{
 			FlxG.log.warn('Couldnt find video file: ' + name);
 			startAndEnd();
-			return;
+			return null;
 		}
 
-		var video:VideoHandler = new VideoHandler();
-			#if (hxCodec >= "3.0.0")
-			// Recent versions
-			video.play(filepath);
-			video.onEndReached.add(function()
-			{
-				video.dispose();
+		var video:VideoManager = new VideoManager();
+			video.startVideo(filepath);
+			video.setFinishCallBack(function(){
 				startAndEnd();
-				return;
-			}, true);
-			#else
-			// Older versions
-			video.playVideo(filepath);
-			video.finishCallback = function()
-			{
-				startAndEnd();
-				return;
-			}
-			#end
-		#else
+				return null;
+			});
+		return video;
+		}
+	#else
+		//because it returns a VideoManager which dosen't exists on unsupported platforms so it results in a error during compile.
+		public function startVideo(ignoreThisThing:String){
 		FlxG.log.warn('Platform not supported!');
 		startAndEnd();
-		return;
-		#end
-	}
+		return null;
+		}
+	#end
 
 	function startAndEnd()
 	{
@@ -1528,6 +1518,15 @@ class PlayState extends MusicBeatState
 			for (timer in modchartTimers) timer.active = true;
 			#end
 
+			#if VIDEOS_ALLOWED
+			if(videoSprites.length > 0){
+			for(daVideoSprite in 0...videoSprites.length)
+				if(videoSprites[daVideoSprite].bitmap.isDisplaying && videoSprites[daVideoSprite] != null) // prevents null function pointer when pausing after the video is finished
+				videoSprites[daVideoSprite].resume();
+			}
+			#end
+
+
 			paused = false;
 			callOnScripts('onResume');
 			resetRPC(startTimer != null && startTimer.finished);
@@ -1774,6 +1773,15 @@ class PlayState extends MusicBeatState
 			checkEventNote();
 		}
 
+		#if VIDEOS_ALLOWED
+		if(videoSprites.length > 0){
+		for(daVideoSprite in videoSprites){
+			if(!daVideoSprite.bitmap.isDisplaying)
+				videoSprites.remove(daVideoSprite);
+		}
+	}
+		#end
+
 		#if debug
 		if(!endingSong && !startingSong) {
 			if (FlxG.keys.justPressed.ONE) {
@@ -1808,6 +1816,16 @@ class PlayState extends MusicBeatState
 			MusicBeatState.switchState(new GitarooPause());
 		}
 		else {*/
+
+		#if VIDEOS_ALLOWED
+		if(videoSprites.length > 0){
+			for(daVideoSprite in 0...videoSprites.length){
+				if(videoSprites[daVideoSprite].bitmap.isDisplaying && videoSprites[daVideoSprite] != null) // prevents null function pointer when pausing after the video is finished
+				videoSprites[daVideoSprite].pause();
+			}
+		}
+		#end
+		
 		if(FlxG.sound.music != null) {
 			FlxG.sound.music.pause();
 			vocals.pause();
@@ -1877,6 +1895,20 @@ class PlayState extends MusicBeatState
 				}
 				for (timer in modchartTimers) {
 					timer.active = true;
+				}
+				#end
+				#if VIDEOS_ALLOWED
+				//i assume it's better removing the thing on gameover
+				if(videoSprites.length > 0){
+				for(daVideoSprite in 0...videoSprites.length){
+				#if (hxCodec < "3.0.0")
+				videoSprites[daVideoSprite].bitmap.onEndReached(); //ends the video(using kill only didn't remove the sound so...)
+				#end
+				videoSprites[daVideoSprite].destroy();
+				videoSprites[daVideoSprite].kill();
+				}
+				for(i in videoSprites)
+					videoSprites.remove(i);
 				}
 				#end
 				openSubState(new GameOverSubstate(boyfriend.getScreenPosition().x - boyfriend.positionArray[0], boyfriend.getScreenPosition().y - boyfriend.positionArray[1], camFollow.x, camFollow.y));
@@ -2961,6 +2993,22 @@ class PlayState extends MusicBeatState
 
 		while (hscriptArray.length > 0)
 			hscriptArray.pop();
+		#end
+
+		#if VIDEOS_ALLOWED
+		if(videoSprites.length > 0){
+			for(daVideoSprite in 0...videoSprites.length){
+			if(videoSprites[daVideoSprite].bitmap.isDisplaying && videoSprites[daVideoSprite] != null){
+			#if (hxCodec < "3.0.0")
+			videoSprites[daVideoSprite].bitmap.onEndReached();
+			#end
+			videoSprites[daVideoSprite].destroy();
+			videoSprites[daVideoSprite].kill();
+			}
+		}
+			for(i in videoSprites)
+				videoSprites.remove(i);
+			}
 		#end
 
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);

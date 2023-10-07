@@ -81,6 +81,10 @@ class HScript extends SScript
 		#end
 		set('ShaderFilter', openfl.filters.ShaderFilter);
 		set('StringTools', StringTools);
+		#if VIDEOS_ALLOWED
+		set('VideoSpriteManager', backend.VideoSpriteManager);
+		set('VideoManager', backend.VideoManager);
+		#end
 
 		// Functions & Variables
 		set('setVar', function(name:String, value:Dynamic)
