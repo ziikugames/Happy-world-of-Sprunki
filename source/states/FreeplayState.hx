@@ -1,5 +1,6 @@
 package states;
 
+import openfl.Assets;
 import backend.WeekData;
 import backend.Highscore;
 import backend.Song;
@@ -69,7 +70,10 @@ class FreeplayState extends MusicBeatState
 				persistentUpdate = false;
 				MusicBeatState.switchState(new states.ErrorState("NO WEEKS ADDED FOR FREEPLAY\n\nPress ACCEPT to go to the Week Editor Menu.\nPress BACK to return to Main Menu.",
 					function() MusicBeatState.switchState(new states.editors.WeekEditorState()),
-					function() MusicBeatState.switchState(new states.MainMenuState())));
+					function() {
+						FlxG.sound.play(Paths.sound('cancelMenu'));
+						MusicBeatState.switchState(new states.MainMenuState());
+					}));
 				return;
 			}
 
@@ -215,7 +219,10 @@ class FreeplayState extends MusicBeatState
 	override function update(elapsed:Float)
 	{
 		if(WeekData.weeksList.length < 1)
+		{
+			super.update(elapsed);
 			return;
+		}
 
 		if (FlxG.sound.music.volume < 0.7)
 			FlxG.sound.music.volume += 0.5 * FlxG.elapsed;
