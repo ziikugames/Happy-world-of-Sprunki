@@ -503,9 +503,7 @@ class PlayState extends MusicBeatState
 		FlxG.camera.follow(camFollow, LOCKON, 0);
 		FlxG.camera.zoom = defaultCamZoom;
 		FlxG.camera.snapToTarget();
-
 		FlxG.worldBounds.set(0, 0, FlxG.width, FlxG.height);
-		moveCameraSection();
 
 		healthBar = new Bar(0, FlxG.height * (!ClientPrefs.data.downScroll ? 0.89 : 0.11), 'healthBar', function() return health, 0, 2);
 		healthBar.screenCenter(X);
@@ -961,6 +959,7 @@ class PlayState extends MusicBeatState
 			callOnScripts('onCountdownStarted');
 
 			var swagCounter:Int = 0;
+			moveCameraSection();
 			if (startOnTime > 0) {
 				clearNotesBefore(startOnTime);
 				setSongTime(startOnTime - 350);
@@ -971,7 +970,6 @@ class PlayState extends MusicBeatState
 				setSongTime(0);
 				return true;
 			}
-			moveCameraSection();
 
 			startTimer = new FlxTimer().start(Conductor.crochet / 1000 / playbackRate, function(tmr:FlxTimer)
 			{
@@ -2257,25 +2255,29 @@ class PlayState extends MusicBeatState
 		callOnScripts('onEvent', [eventName, value1, value2, strumTime]);
 	}
 
-	public function moveCameraSection(?sec:Null<Int>):Void {
-		if(sec == null) sec = curSection;
-		if(sec < 0) sec = 0;
+	var lastCharacterFocus:String;
+	public function moveCameraSection():Void {
+		if (SONG.notes[curSection] == null)
+			return;
 
-		if(SONG.notes[sec] == null) return;
-
-		if (gf != null && SONG.notes[sec].gfSection)
+		if (gf != null && SONG.notes[curSection].gfSection)
 		{
 			moveCameraToGirlfriend();
-			callOnScripts('onMoveCamera', ['gf']);
+			if (lastCharacterFocus != 'gf')
+			{
+				callOnScripts('onMoveCamera', ['gf']);
+				lastCharacterFocus = 'gf';
+			}
 			return;
 		}
 
-		var isDad:Bool = (SONG.notes[sec].mustHitSection != true);
+		var isDad:Bool = !SONG.notes[curSection].mustHitSection;
+		var newFocus:String = isDad ? 'dad' : 'boyfriend';
 		moveCamera(isDad);
-		if (isDad)
-			callOnScripts('onMoveCamera', ['dad']);
-		else
-			callOnScripts('onMoveCamera', ['boyfriend']);
+		if (newFocus != lastCharacterFocus)
+			callOnScripts('onMoveCamera', [newFocus]);
+
+		lastCharacterFocus = newFocus;
 	}
 	
 	public function moveCameraToGirlfriend()
