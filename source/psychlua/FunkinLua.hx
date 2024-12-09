@@ -798,15 +798,16 @@ class FunkinLua {
 			}
 		});
 		Lua_helper.add_callback(lua, "cameraSetTarget", function(target:String) {
-			switch(target.trim().toLowerCase())
-			{
-				case 'gf', 'girlfriend':
-					game.moveCameraToGirlfriend();
-				case 'dad', 'opponent':
-					game.moveCamera(true);
-				default:
-					game.moveCamera(false);
+			switch (target.trim().toLowerCase()) {
+				case 'girlfriend':
+					game.moveCameraTo('gf');
+					return false;
+				case 'opponent':
+					game.moveCameraTo('dad');
+					return true;
 			}
+			var name:String = game.moveCameraTo(target);
+			return name == 'dad';
 		});
 
 		Lua_helper.add_callback(lua, "setCameraScroll", function(x:Float, y:Float) FlxG.camera.scroll.set(x - FlxG.width/2, y - FlxG.height/2));
