@@ -132,6 +132,13 @@ function opponentNoteHitPre(id, direction, noteType, isSustainNote)
 	-- isSustainNote: If it's a hold note, can be either true or false
 end
 
+function litPlayerHitPre(id, direction, noteType, isSustainNote)
+	-- Works the same as goodNoteHitPre and opponentNoteHitPre, but for general player hits
+end
+function litOppoHitPre(id, direction, noteType, isSustainNote)
+	-- Works the same as litPlayerHitPre, but for general opponent hits
+end
+
 ---- POST
 function goodNoteHit(id, direction, noteType, isSustainNote)
 	-- Function called when you hit a note (***after*** note hit calculations)
@@ -146,6 +153,13 @@ function opponentNoteHit(id, direction, noteType, isSustainNote)
 	-- noteData: 0 = Left, 1 = Down, 2 = Up, 3 = Right
 	-- noteType: The note type string
 	-- isSustainNote: If it's a hold note, can be either true or false
+end
+
+function litPlayerHit(id, direction, noteType, isSustainNote)
+	-- Works the same as goodNoteHit and opponentNoteHit, but for general player hits
+end
+function litOppoHit(id, direction, noteType, isSustainNote)
+	-- Works the same as litPlayerHit, but for general opponent hits
 end
 
 function noteMissPress(direction)
